@@ -70,4 +70,8 @@ function render(time) {
 requestAnimationFrame(render);
 let music = new Audio("funky-town-djlunatique.com.mp3");
 music.currentTime = 15;
-music.play();
+document.body.addEventListener("click", function () {
+    if (music.paused) {
+        music.play();
+    }
+});
