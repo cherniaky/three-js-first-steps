@@ -11,10 +11,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 // Set up the scene, camera, and renderer
 const canvas = document.querySelector("#c");
 const scene = new THREE.Scene();
-// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
 const objects: THREE.Object3D<THREE.Event>[] = [];
 
 // Create the office room
@@ -114,13 +111,29 @@ camera.lookAt(player.position);
 // controls.target = player.position;
 
 // controls.update();
+function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
+    const canvas = renderer.domElement;
+    const pixelRatio = window.devicePixelRatio;
+    const width = (canvas.clientWidth * pixelRatio) | 0;
+    const height = (canvas.clientHeight * pixelRatio) | 0;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+        renderer.setSize(width, height, false);
+    }
+    return needResize;
+}
 
+renderer.render(scene, camera);
 // Render the scene
 function animate() {
-    requestAnimationFrame(animate);
 
     // controls.target = player.position;
     // controls.update();
+     if (resizeRendererToDisplaySize(renderer)) {
+         const canvas = renderer.domElement;
+         camera.aspect = canvas.clientWidth / canvas.clientHeight;
+         camera.updateProjectionMatrix();
+     }
 
     // Handle player movement
     if (keys["ArrowUp"]) {
@@ -165,6 +178,8 @@ function animate() {
     }
 
     renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+
 }
 animate();
 

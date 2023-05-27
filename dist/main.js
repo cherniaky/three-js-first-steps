@@ -2,10 +2,7 @@ import * as THREE from "three";
 // Set up the scene, camera, and renderer
 const canvas = document.querySelector("#c");
 const scene = new THREE.Scene();
-// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
 const objects = [];
 // Create the office room
 const roomGeometry = new THREE.BoxGeometry(10, 4, 8);
@@ -90,11 +87,27 @@ camera.lookAt(player.position);
 // controls.enableZoom = true;
 // controls.target = player.position;
 // controls.update();
+function resizeRendererToDisplaySize(renderer) {
+    const canvas = renderer.domElement;
+    const pixelRatio = window.devicePixelRatio;
+    const width = (canvas.clientWidth * pixelRatio) | 0;
+    const height = (canvas.clientHeight * pixelRatio) | 0;
+    const needResize = canvas.width !== width || canvas.height !== height;
+    if (needResize) {
+        renderer.setSize(width, height, false);
+    }
+    return needResize;
+}
+renderer.render(scene, camera);
 // Render the scene
 function animate() {
-    requestAnimationFrame(animate);
     // controls.target = player.position;
     // controls.update();
+    if (resizeRendererToDisplaySize(renderer)) {
+        const canvas = renderer.domElement;
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+    }
     // Handle player movement
     if (keys["ArrowUp"]) {
         if (!checkCollision(player.position.x, player.position.z - movementSpeed)) {
@@ -117,6 +130,7 @@ function animate() {
         }
     }
     renderer.render(scene, camera);
+    requestAnimationFrame(animate);
 }
 animate();
 function checkCollision(x, z) {
