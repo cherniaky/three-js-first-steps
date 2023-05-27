@@ -1,102 +1,190 @@
 import * as THREE from "three";
 // @ts-ignore
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
+// @ts-ignore
+import { FontLoader } from "three/addons/loaders/FontLoader.js";
+// @ts-ignore
+import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+// @ts-ignore
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-function makeInstance(
-    geometry: THREE.BufferGeometry,
-    color: THREE.ColorRepresentation,
-    x: number
-) {
-    const material = new THREE.MeshPhongMaterial({ color });
-
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    cube.position.x = x;
-
-    return cube;
-}
-
+// Set up the scene, camera, and renderer
 const canvas = document.querySelector("#c");
-const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
-
-const fov = 75;
-const aspect = 2; // the canvas default
-const near = 0.1;
-const far = 50000;
-const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-camera.position.z = 300;
-camera.position.y = 50;
-
 const scene = new THREE.Scene();
+// const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true, canvas });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+const objects: THREE.Object3D<THREE.Event>[] = [];
 
-const boxWidth = 1;
-const boxHeight = 1;
-const boxDepth = 1;
-const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+// Create the office room
+const roomGeometry = new THREE.BoxGeometry(10, 4, 8);
+const roomMaterial = new THREE.MeshBasicMaterial({
+    color: 0x808080,
+    wireframe: true,
+});
+const room = new THREE.Mesh(roomGeometry, roomMaterial);
+scene.add(room);
+// objects.push(room);
 
-const cubes = [
-    // makeInstance(geometry, 0x44aa88, 0),
-    // makeInstance(geometry, 0x8844aa, -2),
-    // makeInstance(geometry, 0xaa8844, 2),
-];
+// Create a desk
+const deskGeometry = new THREE.BoxGeometry(6, 0.2, 3);
+const deskMaterial = new THREE.MeshBasicMaterial({ color: 0x654321 });
+const desk = new THREE.Mesh(deskGeometry, deskMaterial);
+desk.position.set(0, -1.9, 0);
+room.add(desk);
+objects.push(desk);
 
-const color = 0xffffff;
-const intensity = 1;
-const light = new THREE.DirectionalLight(color, intensity);
-light.position.set(-1, 2, 4);
-scene.add(light);
+// Create a chair
+const chairGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+const chairMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const chair = new THREE.Mesh(chairGeometry, chairMaterial);
+chair.position.set(-1, -1.9, -1);
+room.add(chair);
+objects.push(chair);
+// Create a computer monitor
+const monitorGeometry = new THREE.BoxGeometry(0.8, 0.4, 0.05);
+const monitorMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+const monitor = new THREE.Mesh(monitorGeometry, monitorMaterial);
+monitor.position.set(-0.8, -1.5, -1);
+room.add(monitor);
+objects.push(monitor);
+// Create a keyboard
+const keyboardGeometry = new THREE.BoxGeometry(0.8, 0.1, 0.3);
+const keyboardMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const keyboard = new THREE.Mesh(keyboardGeometry, keyboardMaterial);
+keyboard.position.set(-0.8, -1.7, -1);
+room.add(keyboard);
+objects.push(keyboard);
+// Create a chair for visitors
+const visitorChairGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+const visitorChairMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const visitorChair = new THREE.Mesh(visitorChairGeometry, visitorChairMaterial);
+visitorChair.position.set(1, -1.9, -2);
+room.add(visitorChair);
+objects.push(visitorChair);
+// Create a table for visitors
+const visitorTableGeometry = new THREE.BoxGeometry(2, 0.2, 1);
+const visitorTableMaterial = new THREE.MeshBasicMaterial({ color: 0x654321 });
+const visitorTable = new THREE.Mesh(visitorTableGeometry, visitorTableMaterial);
+visitorTable.position.set(1, -1.9, -2);
+room.add(visitorTable);
+objects.push(visitorTable);
 
-const objLoader = new OBJLoader();
-objLoader.load("models/bamboo shark.obj", (root: THREE.Mesh) => {
-    setInterval(() => {
-        root.rotateY(0.01);
-    }, 10);
+// Create the player object
+const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
+// Load the custom image as a texture
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load("1578845093813.jpg");
+// Create a material with the custom image texture
+const playerMaterial = new THREE.MeshBasicMaterial({ map: texture });
+const player = new THREE.Mesh(playerGeometry, playerMaterial);
+scene.add(player);
 
-    scene.add(root);
+// Position the player
+player.position.set(0, -1.9, 5);
+
+// Handle keyboard input
+const keys = {};
+document.addEventListener("keydown", (event) => {
+    keys[event.code] = true;
+});
+document.addEventListener("keyup", (event) => {
+    keys[event.code] = false;
 });
 
-renderer.render(scene, camera);
+// Set the player's movement speed
+const movementSpeed = 0.1;
 
-function resizeRendererToDisplaySize(renderer: THREE.WebGLRenderer) {
-    const canvas = renderer.domElement;
-    const pixelRatio = window.devicePixelRatio;
-    const width = (canvas.clientWidth * pixelRatio) | 0;
-    const height = (canvas.clientHeight * pixelRatio) | 0;
-    const needResize = canvas.width !== width || canvas.height !== height;
-    if (needResize) {
-        renderer.setSize(width, height, false);
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+const cameraOffset = new THREE.Vector3(0, 1, 2); // Set the camera position relative to the player
+player.add(camera);
+camera.position.copy(cameraOffset);
+camera.lookAt(player.position);
+
+// const controls = new OrbitControls(camera, renderer.domElement);
+// controls.enableDamping = true;
+// controls.dampingFactor = 0.05;
+// controls.enableZoom = true;
+// controls.target = player.position;
+
+// controls.update();
+
+// Render the scene
+function animate() {
+    requestAnimationFrame(animate);
+
+    // controls.target = player.position;
+    // controls.update();
+
+    // Handle player movement
+    if (keys["ArrowUp"]) {
+        if (
+            !checkCollision(
+                player.position.x,
+                player.position.z - movementSpeed
+            )
+        ) {
+            player.position.z -= movementSpeed;
+        }
     }
-    return needResize;
-}
-
-function render(time: number) {
-    time *= 0.001; // convert time to seconds
-
-    if (resizeRendererToDisplaySize(renderer)) {
-        const canvas = renderer.domElement;
-        camera.aspect = canvas.clientWidth / canvas.clientHeight;
-        camera.updateProjectionMatrix();
+    if (keys["ArrowDown"]) {
+        if (
+            !checkCollision(
+                player.position.x,
+                player.position.z + movementSpeed
+            )
+        ) {
+            player.position.z += movementSpeed;
+        }
     }
-
-    cubes.forEach((cube, ndx) => {
-        const speed = 1 + ndx * 0.1;
-        const rot = time * speed;
-        cube.rotation.x = rot;
-        cube.rotation.y = rot;
-    });
+    if (keys["ArrowLeft"]) {
+        if (
+            !checkCollision(
+                player.position.x - movementSpeed,
+                player.position.z
+            )
+        ) {
+            player.position.x -= movementSpeed;
+        }
+    }
+    if (keys["ArrowRight"]) {
+        if (
+            !checkCollision(
+                player.position.x + movementSpeed,
+                player.position.z
+            )
+        ) {
+            player.position.x += movementSpeed;
+        }
+    }
 
     renderer.render(scene, camera);
-
-    requestAnimationFrame(render);
 }
-requestAnimationFrame(render);
+animate();
 
-let music = new Audio("funky-town-djlunatique.com.mp3");
-music.currentTime = 15;
+function checkCollision(x, z) {
+    // Define player's bounding box
+    // const mesj = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial())
+    const copy = player.clone();
+    copy.position.x = x;
+    copy.position.z = z;
+    const playerBox = new THREE.Box3().setFromObject(copy);
 
-document.body.addEventListener("click", function () {
-   if (music.paused) {
-       music.play();
-   }
-});
+    // Define obstacle's bounding box
+    const obstacleBoxes = objects.map((obj) =>
+        new THREE.Box3().setFromObject(obj)
+    );
+
+    // Check for intersection
+    if (obstacleBoxes.some((box) => playerBox.intersectsBox(box))) {
+        return true; // Collision detected
+    }
+
+    return false; // No collision
+}

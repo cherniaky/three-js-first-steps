@@ -1,10 +1,13 @@
 {
-  "dependencies": {
-    "three": "^0.152.2"
-  },
-  "devDependencies": {
-    "@types/three": "^0.152.1",
-    "typescript": "^5.0.4",
-    "vite": "^4.3.9"
-  }
+    "dependencies": {
+        "three": "^0.152.2"
+    },
+    "scripts": {
+        "dev": "npx vite & tsc --watch"
+    },
+    "devDependencies": {
+        "@types/three": "^0.152.1",
+        "typescript": "^5.0.4",
+        "vite": "^4.3.9"
+    }
 }
