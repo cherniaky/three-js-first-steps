@@ -98,53 +98,83 @@ function resizeRendererToDisplaySize(renderer) {
     }
     return needResize;
 }
+const rotationSpeed = 0.005;
+let isMousePressed = false;
+let startRotateX = 0;
+let startRotation = 0;
+function handleMouseMove(event) {
+    if (!isMousePressed)
+        return;
+    const x = event.clientX - startRotateX;
+    const newYRotation = startRotation + x * rotationSpeed;
+    if (checkCollision(player.position.x, newYRotation, player.position.z)) {
+        return;
+    }
+    player.rotation.y = newYRotation;
+}
+function handleMouseDown(event) {
+    isMousePressed = true;
+    startRotateX = event.clientX;
+}
+function handleMouseUp() {
+    isMousePressed = false;
+    startRotateX = 0;
+    startRotation = player.rotation.y;
+}
+document.addEventListener("mousemove", handleMouseMove, false);
+document.addEventListener("mousedown", handleMouseDown, false);
+document.addEventListener("mouseup", handleMouseUp, false);
 renderer.render(scene, camera);
-// Render the scene
 function animate() {
-    // controls.target = player.position;
-    // controls.update();
     if (resizeRendererToDisplaySize(renderer)) {
         const canvas = renderer.domElement;
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
         camera.updateProjectionMatrix();
     }
-    // Handle player movement
     if (keys["ArrowUp"]) {
-        if (!checkCollision(player.position.x, player.position.z - movementSpeed)) {
-            player.position.z -= movementSpeed;
+        const ZSpeed = -1 * Math.cos(player.rotation.y) * movementSpeed;
+        const XSpeed = -1 * Math.sin(player.rotation.y) * movementSpeed;
+        if (!checkCollision(player.position.x + XSpeed, player.position.y, player.position.z + ZSpeed)) {
+            player.position.x += XSpeed;
+            player.position.z += ZSpeed;
         }
     }
     if (keys["ArrowDown"]) {
-        if (!checkCollision(player.position.x, player.position.z + movementSpeed)) {
-            player.position.z += movementSpeed;
+        const XSpeed = Math.sin(player.rotation.y) * movementSpeed;
+        const ZSpeed = Math.cos(player.rotation.y) * movementSpeed;
+        if (!checkCollision(player.position.x + XSpeed, player.position.y, player.position.z + ZSpeed)) {
+            player.position.x += XSpeed;
+            player.position.z += ZSpeed;
         }
     }
     if (keys["ArrowLeft"]) {
-        if (!checkCollision(player.position.x - movementSpeed, player.position.z)) {
-            player.position.x -= movementSpeed;
+        const XSpeed = -1 * Math.cos(player.rotation.y) * movementSpeed;
+        const ZSpeed = Math.sin(player.rotation.y) * movementSpeed;
+        if (!checkCollision(player.position.x + XSpeed, player.position.y, player.position.z + ZSpeed)) {
+            player.position.x += XSpeed;
+            player.position.z += ZSpeed;
         }
     }
     if (keys["ArrowRight"]) {
-        if (!checkCollision(player.position.x + movementSpeed, player.position.z)) {
-            player.position.x += movementSpeed;
+        const XSpeed = Math.cos(player.rotation.y) * movementSpeed;
+        const ZSpeed = -1 * Math.sin(player.rotation.y) * movementSpeed;
+        if (!checkCollision(player.position.x + XSpeed, player.position.y, player.position.z + ZSpeed)) {
+            player.position.x += XSpeed;
+            player.position.z += ZSpeed;
         }
     }
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
 }
 animate();
-function checkCollision(x, z) {
-    // Define player's bounding box
-    // const mesj = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial())
+function checkCollision(x, y, z) {
     const copy = player.clone();
     copy.position.x = x;
     copy.position.z = z;
     const playerBox = new THREE.Box3().setFromObject(copy);
-    // Define obstacle's bounding box
     const obstacleBoxes = objects.map((obj) => new THREE.Box3().setFromObject(obj));
-    // Check for intersection
     if (obstacleBoxes.some((box) => playerBox.intersectsBox(box))) {
-        return true; // Collision detected
+        return true;
     }
-    return false; // No collision
+    return false;
 }
